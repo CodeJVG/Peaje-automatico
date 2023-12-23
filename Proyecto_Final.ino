@@ -56,7 +56,7 @@ char KEYS[] = {
 
 OnewireKeypad <Print, 16 > KP(Serial, KEYS, 4, 4, A0, 5600,1500 );//
 char Key; //Tecla presionama
-#define num 7 // Cantidad de datos del mondo a recargar
+#define num 7 // Cantidad de datos del monto a recargar
 char Data[num]; // Cadena de teclas plesionadas
 byte data_count = 0;  //Indice del la cadena Data
 int monto_recarga = 0; //monto a recargar
@@ -93,7 +93,7 @@ void setup() {
 }
 
 void loop() {
-  if (modo_recarga==1&&password.evaluate())//?????
+  if (modo_recarga==1&&password.evaluate())
   {
     if(hasRun==0){
       lcd.clear();
@@ -147,7 +147,7 @@ void loop() {
       imprimirPago();
     }
     if(sensor_IR2==1&&pasar==1&&pasasensor2==1){
-      if(hasRun1==0){
+      if(hasRun1==0){ //Reinicia el display 
         lcd.clear();
         hasRun1=1;
       }
@@ -156,7 +156,6 @@ void loop() {
       lcd.setCursor(0, 1);
       lcd.print("viaje");
     }
-    // Presiona el boton "A" para iniciar el modo recarga, sino , continua el codigo
     if (sensor_IR2 == 0 && pasar == 1)
     {
       servo.write(90);
@@ -198,19 +197,21 @@ void loop() {
 
 void pago()
 { 
-  // Leemos el balance de la tarjeta
-  Serial.print("Realizando Pago...");
   lcd.clear();
   lcd.print("Realizando Pago...");
   delay(500);
 
-  balance = balance - 100; // String a float
+  balance = balance - 100; 
   char balance_char[] = "";
+  //Conversión float balance a char* balance_char
   dtostrf(balance,2, 2, balance_char);
   byte Balance[16];  
+  //Conversion char* balance_char a Byte
   String(balance_char).getBytes(Balance,16);
   Serial.println(String((char*)Balance));
-  WriteDataToBlock(blockNum_Balance, Balance);//siempre va a estar leyendo datos podemos añadir un flag de que si ya leyo o no los  datos
+  
+  //Escritura de datos en la tarjeta
+  WriteDataToBlock(blockNum_Balance, Balance);
   modo_pago=0;
   pasar = 1;
   password.reset();
@@ -251,32 +252,36 @@ void ObtieneyVerificaPassword(){
     return;
   }
 
-  // Leemos el balance de la tarjeta
+  
   Serial.print("\n");
   Serial.println("Leyendo datos de la tarjeta...");
 
+  // Leemos el balance de la tarjeta
   ReadDataFromBlock(blockNum_Balance, readBlockData);
   balance = atof((char*)readBlockData); // String a float
   Serial.print("Balance");
-  Serial.println((char*)readBlockData); 
+  Serial.println((char*)readBlockData);
+  
+  // Leemos la contraseña de la tarjeta
   ReadDataFromBlock(blockNum_Password, readBlockData);
-  password.set((char*)readBlockData);//siempre va a estar leyendo datos podemos añadir un flag de que si ya leyo o no los  datos
+  password.set((char*)readBlockData);//siempre va a estar leyendo datos 
   Serial.print("contraseña");
   Serial.println((char*)readBlockData);
 
+  //Escribimos la contraseña en el teclado  
   int count=0;
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Inserte su clave");
   delay(500);
-  while(count<4){//Podemos contar hasta cuatro/
+  while(count<4){//contraseña de 4 numeros
     char Key;
     byte KState = KP.Key_State();
     if (KState == PRESSED) { 
       if ( Key = KP.Getkey() ) {
         count++;
         lcd.setCursor(count, 1);
-        lcd.print("*");//solo para mostraar la contraseña como asteriscos
+        lcd.print("*");//mostrar la contraseña como asteriscos
         delay(100);
         password.append(Key);
         if(Key=='*'){
@@ -287,6 +292,7 @@ void ObtieneyVerificaPassword(){
       }
     }
   }
+  //Validamos la contraseña
   checkPassword();
 }
 
@@ -297,7 +303,6 @@ void checkPassword() {
       lcd.setCursor(0, 0);
       lcd.print("Clave correcta");
       delay(1000);
-    //Add code to run if it works
   } else {
     lcd.clear();
     lcd.setCursor(0, 0);        
@@ -309,7 +314,6 @@ void checkPassword() {
     lcd.setCursor(5, 1);        
     lcd.print("tarjeta");
     password.reset();
-    //add code to run if it did not work
   }
 }
 
@@ -321,6 +325,7 @@ void recarga()
   int count=0;
   lcd.setCursor(0, 0);
   lcd.print ("Ingrese el monto");
+  //Recargar a lo mucho 999
   while(count<3)
   {
     count++;
@@ -330,16 +335,19 @@ void recarga()
       Key = KP.Getkey();
       if (Key == '*')
       {
+        //Conversión Byte Data a int monto_recarga
         monto_recarga = atoi(Data);
+        //Aumento del balance
         balance = monto_recarga + balance ;
         char balance_char[] = "";
+        //Conversión del float balance a char* balance_char
         dtostrf(balance,2, 2, balance_char);
         byte Balance[16];  
+        //Conversion char* balance_char a Byte Balance
         String(balance_char).getBytes(Balance,16);
 
-        // reescribir tarjeta
+        // Reescribir tarjeta
         WriteDataToBlock(blockNum_Balance,Balance);
-
 
         lcd.clear();
         lcd.setCursor(0, 0);
@@ -371,9 +379,12 @@ void recarga()
         count=0;
       }
       else{
+        //Añadir el  numero al monto de recarga
         Data[data_count] = Key;
+        //Desplazar el cursor para añadir el "*"
         lcd.setCursor(data_count, 1);
         lcd.print(Data[data_count]);
+        //Aumentar un indice para el siguiente numero
         data_count++;
       }
     }
